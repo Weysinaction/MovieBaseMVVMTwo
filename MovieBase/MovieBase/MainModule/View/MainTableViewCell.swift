@@ -1,10 +1,10 @@
-// FilmTableViewCell.swift
+// MainTableViewCell.swift
 // Copyright © RoadMap. All rights reserved.
 
 import UIKit
 
-/// FilmTableViewCell-
-final class FilmTableViewCell: UITableViewCell {
+/// MainTableViewCell-
+final class MainTableViewCell: UITableViewCell {
     // MARK: View elements
 
     let titleLabel = UILabel()
