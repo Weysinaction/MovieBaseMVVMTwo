@@ -7,10 +7,14 @@ import UIKit
 final class MainTableViewCell: UITableViewCell {
     // MARK: View elements
 
-    let titleLabel = UILabel()
-    let descriptionLabel = UILabel()
-    let imageViewFilm = UIImageView()
+    private let titleLabel = UILabel()
+    private let descriptionLabel = UILabel()
+    private let imageViewFilm = UIImageView()
     private let cellView = UIView()
+
+    // MARK: private properties
+
+    private let imageNetworkService: ImageNetworkServiceProtocol = ImageNetworkService()
 
     // MARK: FilmTableViewCell methods
 
@@ -37,6 +41,28 @@ final class MainTableViewCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
 
+    // MARK: public methods
+
+    func configureCell(imagePath: String, film: Film, indexPath: IndexPath) {
+        titleLabel.text = film.originalTitle
+        descriptionLabel.text = film.overview
+
+        guard let posterPath = film.posterPath else { return }
+        imageNetworkService.getImage(url: imagePath + posterPath, completion: { result in
+            switch result {
+            case let .success(data):
+                DispatchQueue.main.async {
+                    self.imageViewFilm.image = UIImage(data: data)
+                }
+            case let .failure(error):
+                print(error.localizedDescription)
+                DispatchQueue.main.async {
+                    self.imageViewFilm.image = UIImage(systemName: "xmark.shield.fill")
+                }
+            }
+        })
+    }
+
     // MARK: private methods
 
     private func setupBackgroundView() {
@@ -44,6 +70,7 @@ final class MainTableViewCell: UITableViewCell {
         cellView.layer.borderWidth = 1
         cellView.layer.borderColor = UIColor.darkGray.cgColor
         cellView.layer.cornerRadius = 8
+        cellView.clipsToBounds = true
         cellView.topAnchor.constraint(equalTo: topAnchor, constant: 10).isActive = true
         cellView.leftAnchor.constraint(equalTo: leftAnchor, constant: 10).isActive = true
         cellView.rightAnchor.constraint(equalTo: rightAnchor, constant: -10).isActive = true

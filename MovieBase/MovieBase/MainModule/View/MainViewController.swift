@@ -9,6 +9,8 @@ final class MainViewController: UIViewController {
 
     private var filmTableView = UITableView()
     private var viewModel: MainViewModelProtocol!
+    private var imageNetworkService: ImageNetworkServiceProtocol? = ImageNetworkService()
+    private let imagePath = "https://image.tmdb.org/t/p/w500"
 
     // MARK: private properties
 
@@ -21,7 +23,9 @@ final class MainViewController: UIViewController {
 
         setupViewController()
         viewModel.getFilms {
-            self.filmTableView.reloadData()
+            DispatchQueue.main.async {
+                self.filmTableView.reloadData()
+            }
         }
     }
 
@@ -47,19 +51,6 @@ final class MainViewController: UIViewController {
         filmTableView.rightAnchor.constraint(equalTo: view.rightAnchor).isActive = true
         filmTableView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
     }
-
-    private func configureCell(cell: MainTableViewCell, indexPath: IndexPath) {
-        guard let film = viewModel.filmsArray?[indexPath.row] else { return }
-
-        cell.titleLabel.text = film.originalTitle
-        cell.descriptionLabel.text = film.overview
-
-        DispatchQueue.global().async {
-            DispatchQueue.main.async {
-                cell.imageViewFilm.image = UIImage(data: self.viewModel.getImage(film: film))
-            }
-        }
-    }
 }
 
 // MARK: UITableViewDelegate, UITableViewDataSource
@@ -71,10 +62,11 @@ extension MainViewController: UITableViewDelegate, UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = filmTableView
-            .dequeueReusableCell(withIdentifier: filmCellID, for: indexPath) as? MainTableViewCell
+            .dequeueReusableCell(withIdentifier: filmCellID, for: indexPath) as? MainTableViewCell,
+            let film = viewModel?.filmsArray?[indexPath.row]
         else { return UITableViewCell() }
 
-        configureCell(cell: cell, indexPath: indexPath)
+        cell.configureCell(imagePath: imagePath, film: film, indexPath: indexPath)
 
         return cell
     }
@@ -85,14 +77,10 @@ extension MainViewController: UITableViewDelegate, UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let vc = ViewController()
+        let detailViewModel = DetailViewModel()
+        detailViewModel.film = viewModel.filmsArray?[indexPath.row]
+        vc.viewModel = detailViewModel
 
-        let currentItem = indexPath.row
-        guard let title = viewModel.filmsArray?[currentItem].originalTitle,
-              let overview = viewModel.filmsArray?[currentItem].overview,
-              let imagePath = viewModel.filmsArray?[currentItem].posterPath else { return }
-        vc.filmTitle = title
-        vc.filmDescription = overview
-        vc.path = imagePath
         navigationController?.pushViewController(vc, animated: true)
     }
 }
