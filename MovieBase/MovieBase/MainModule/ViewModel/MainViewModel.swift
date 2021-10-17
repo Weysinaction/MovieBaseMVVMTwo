@@ -5,8 +5,8 @@ import Foundation
 
 protocol MainViewModelProtocol {
     var filmsArray: [Film]? { get set }
+    var movieAPIService: MovieAPIServiceProtocol? { get set }
     func getFilms(completion: @escaping () -> ())
-    func getImage(film: Film) -> Data
 }
 
 /// MainViewModel-
@@ -14,6 +14,9 @@ class MainViewModel: MainViewModelProtocol {
     // MARK: public properties
 
     var filmsArray: [Film]?
+    var movieAPIService: MovieAPIServiceProtocol? = MovieAPIService()
+    var imageAPIService: ImageNetworkServiceProtocol? = ImageNetworkService()
+    // var image
 
     // MARK: private properties
 
@@ -21,33 +24,14 @@ class MainViewModel: MainViewModelProtocol {
     private let imagePath = "https://image.tmdb.org/t/p/w500"
 
     func getFilms(completion: @escaping () -> ()) {
-        guard let url =
-            URL(string: apiURL)
-        else { return }
-
-        let session = URLSession.shared
-        session.dataTask(with: url) { data, response, error in
-            guard let response = response, let data = data else { return }
-            print(response)
-
-            do {
-                let decoder = JSONDecoder()
-                decoder.keyDecodingStrategy = .convertFromSnakeCase
-                let filmRequestModel = try decoder.decode(FilmRequestModel.self, from: data)
-
-                guard let films = filmRequestModel.results else { return }
+        movieAPIService?.getFilms(apiURL: apiURL, completion: { result in
+            switch result {
+            case let .success(films):
                 self.filmsArray = films
                 completion()
-            } catch {
-                print(error)
+            case let .failure(error):
+                print(error.localizedDescription)
             }
-        }.resume()
-    }
-
-    func getImage(film: Film) -> Data {
-        guard let imageURL = URL(string: "\(imagePath)\(film.posterPath ?? "")"),
-              let imageData = try? Data(contentsOf: imageURL) else { return Data() }
-
-        return imageData
+        })
     }
 }
